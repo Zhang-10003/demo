@@ -1,0 +1,38 @@
+seed: 42
+model:
+  name_or_path: /node1/public/model_weight/qwen/Qwen3-1.7B-Base
+  trust_remote_code: true
+  dtype: bfloat16
+data:
+  root: /node1/public/dataset/hendrycks_math
+  processed_dir: data/processed/diagnosis
+  split: pilot_100.parquet
+  max_samples: 3
+  prompt_config: configs/grpo_qwen3_1.7b_math.yaml
+  expected_categories: [algebra, counting_and_probability, geometry, intermediate_algebra, number_theory, prealgebra, precalculus]
+  expected_train_size: 7500
+  future_train_size: 7000
+  diagnostic_size: 500
+  pilot_size: 100
+  future_train_file: future_train_7000.parquet
+  diagnostic_file: diagnostic_500.parquet
+  pilot_file: pilot_100.parquet
+rollout:
+  initial_group_size: 2
+  recovery_num_samples: 4
+  temperature: 1.0
+  top_p: 1.0
+  top_k: -1
+  max_response_length: 512
+  max_prompt_length: 1024
+  tensor_parallel_size: 1
+  gpu_memory_utilization: 0.85
+  max_num_seqs: 16
+diagnosis:
+  resume: true
+  batch_size: 3
+  top_case_count: 5
+  case_correct_responses: 2
+  case_wrong_responses: 2
+output:
+  dir: outputs/diagnosis/debug_qwen3_1.7b_math
