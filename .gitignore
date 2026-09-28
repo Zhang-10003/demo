@@ -25,11 +25,6 @@ outputs/**/environment.json
 tensorboard_log/
 wandb/
 .wandb/
-tests/
-!tests/
-tests/*
-!tests/test_diagnosis.py
-scripts/
 data/processed/diagnosis/
 outputs/diagnosis/
 data/processed/.gitkeep
