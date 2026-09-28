@@ -1,0 +1,88 @@
+experiment:
+  name: debug_grpo
+  output_dir: outputs/debug_grpo
+  seed: 42
+model:
+  name_or_path: /path/to/models/Qwen3-1.7B-Base
+  trust_remote_code: true
+  gradient_checkpointing: true
+data:
+  train_file: data/processed/math_train.parquet
+  val_file: data/processed/math500.parquet
+  train_source: DigitalLearningGmbH/MATH-lighteval
+  eval_source: HuggingFaceH4/MATH-500
+  prompt_suffix: "Let's think step by step and output the final answer within \\boxed{}."
+  train_batch_size: 2
+  max_prompt_length: 512
+  max_response_length: 256
+  shuffle: true
+  filter_overlong_prompts: true
+  truncation: error
+rollout:
+  num_samples_per_prompt: 2
+  temperature: 1.0
+  top_p: 1.0
+  top_k: -1
+  engine: vllm
+  mode: async
+  tensor_model_parallel_size: 1
+  gpu_memory_utilization: 0.50
+algorithm:
+  name: grpo
+  adv_estimator: grpo
+  use_kl_in_reward: false
+  use_kl_loss: false
+  clip_ratio_low: 0.20
+  clip_ratio_high: 0.28
+  loss_aggregation: token-mean
+  dynamic_sampling: {enabled: false}
+  overlong_reward: {enabled: false}
+optimizer:
+  name: adamw
+  learning_rate: 3.0e-6
+  weight_decay: 0.01
+scheduler:
+  name: cosine
+  warmup_steps: 1
+training:
+  epochs: 1
+  total_gradient_steps: 2
+  prompt_mini_batch_size: 1
+  micro_batch_size_per_gpu: 1
+  ppo_epochs: 1
+distributed:
+  nnodes: 1
+  n_gpus_per_node: 1
+  strategy: fsdp2
+  param_offload: false
+  optimizer_offload: false
+entropy:
+  calculate: false
+  chunked: true
+  chunk_size: null
+  checkpointing: false
+reward:
+  type: math
+  implementation: verl
+logging:
+  tensorboard: {enabled: true}
+  wandb: {enabled: false, project: rl-zvp-repro}
+  log_interval: 1
+checkpoint:
+  save_interval: 1
+  keep_last: 2
+  save_hf_model: true
+  resume_mode: auto
+  resume_from_path: null
+evaluation:
+  checkpoint_path: null
+  benchmark: math500
+  num_samples_per_prompt: 2
+  temperature: 1.0
+  top_p: 0.7
+  top_k: -1
+  max_response_length: 256
+  tensor_parallel_size: 1
+  gpu_memory_utilization: 0.70
+  max_num_seqs: 8
+  during_training_interval: -1

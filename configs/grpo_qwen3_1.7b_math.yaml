@@ -1,0 +1,106 @@
+experiment:
+  name: grpo_qwen3_1.7b_math
+  output_dir: outputs/grpo_qwen3_1.7b_math
+  seed: 42
+
+model:
+  name_or_path: /path/to/models/Qwen3-1.7B-Base
+  trust_remote_code: true
+  gradient_checkpointing: true
+
+data:
+  train_file: data/processed/math_train.parquet
+  val_file: data/processed/math500.parquet
+  train_source: DigitalLearningGmbH/MATH-lighteval
+  eval_source: HuggingFaceH4/MATH-500
+  prompt_suffix: "Let's think step by step and output the final answer within \\boxed{}."
+  train_batch_size: 512
+  max_prompt_length: 1024
+  max_response_length: 4096
+  shuffle: true
+  filter_overlong_prompts: true
+  truncation: error
+
+rollout:
+  num_samples_per_prompt: 8
+  temperature: 1.0
+  top_p: 1.0
+  top_k: -1
+  engine: vllm
+  mode: async
+  tensor_model_parallel_size: 1
+  gpu_memory_utilization: 0.60
+
+algorithm:
+  name: grpo
+  adv_estimator: grpo
+  use_kl_in_reward: false
+  use_kl_loss: false
+  clip_ratio_low: 0.20
+  clip_ratio_high: 0.28
+  loss_aggregation: token-mean
+  dynamic_sampling:
+    enabled: false
+  overlong_reward:
+    enabled: false
+
+optimizer:
+  name: adamw
+  learning_rate: 3.0e-6
+  weight_decay: 0.01
+
+scheduler:
+  name: cosine
+  warmup_steps: 4
+
+training:
+  epochs: 3
+  total_gradient_steps: 672
+  prompt_mini_batch_size: 32
+  micro_batch_size_per_gpu: 1
+  ppo_epochs: 1
+
+distributed:
+  nnodes: 1
+  n_gpus_per_node: 4
+  strategy: fsdp2
+  param_offload: false
+  optimizer_offload: false
+
+entropy:
+  calculate: false
+  chunked: true
+  chunk_size: null
+  checkpointing: false
+
+reward:
+  type: math
+  implementation: verl
+
+logging:
+  tensorboard:
+    enabled: true
+  wandb:
+    enabled: false
+    project: rl-zvp-repro
+  log_interval: 1
+
+checkpoint:
+  save_interval: 10
+  keep_last: 3
+  save_hf_model: true
+  resume_mode: auto
+  resume_from_path: null
+
+evaluation:
+  checkpoint_path: null
+  benchmark: math500
+  num_samples_per_prompt: 8
+  temperature: 1.0
+  top_p: 0.7
+  top_k: -1
+  max_response_length: 4096
+  tensor_parallel_size: 1
+  gpu_memory_utilization: 0.80
+  max_num_seqs: 64
+  during_training_interval: -1

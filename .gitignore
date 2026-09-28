@@ -1,0 +1,31 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+.env
+.idea/
+.vscode/
+
+# Data and model artifacts
+data/processed/*.parquet
+data/raw/
+models/
+*.safetensors
+*.bin
+*.pt
+*.pth
+
+# Training/evaluation artifacts (keep directory placeholders)
+outputs/**/checkpoints/**
+outputs/**/logs/**
+outputs/**/eval/*.json
+outputs/**/config.yaml
+outputs/**/environment.json
+tensorboard_log/
+wandb/
+.wandb/
+tests/
+scripts/
+data/processed/.gitkeep
+outputs/**/.gitkeep

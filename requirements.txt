@@ -1,0 +1,10 @@
+# Project-only dependencies.
+#
+# Do not install verl[fsdp,vllm], PyTorch, vLLM, or flash-attn from this file.
+# Those CUDA-dependent packages must be installed first with verl's official
+# environment for the pinned commit in REQUIRED_VERL.txt.  In particular,
+# flash-attn cannot be installed reliably in the same pip transaction because
+# its build step imports an already-installed torch.
+PyYAML==6.0.2
+tensorboard==2.20.0
+pytest==8.4.2
