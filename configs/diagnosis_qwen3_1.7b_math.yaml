@@ -17,6 +17,12 @@ data:
   future_train_file: future_train_7000.parquet
   diagnostic_file: diagnostic_500.parquet
   pilot_file: pilot_100.parquet
+  # Verified source annotation defect: this solution ends with an empty box.
+  answer_overrides:
+    'number_theory/train-00000-of-00001.parquet:661':
+      ground_truth: '0'
+      expected_solution: 'Observe that for all $k \in 1< k< n$, since $k$ divides $n!$, $k$ also divides $n!+k$. Therefore, all numbers $a$ in the range $n!+1<a<n!+n$ are composite. Therefore there are $\boxed{}$ primes in that range.'
+      reason: 'Empty boxed annotation; every intermediate integer is composite, so the number of primes is zero.'
 rollout:
   initial_group_size: 8
   recovery_num_samples: 32

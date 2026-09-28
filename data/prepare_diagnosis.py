@@ -43,6 +43,30 @@ def stratified_take(rows: list[dict], count: int, seed: int):
     return selected, remaining
 
 
+def extract_diagnosis_ground_truth(original, example_id, overrides, extractor):
+    """Reuse the existing extractor; repair only explicit, verified YAML entries.
+
+    Never infer an answer from an arbitrary empty box. A configured repair must
+    match the source solution and must not replace an already valid annotation.
+    """
+    gold = extractor(original)
+    if example_id in overrides:
+        override = overrides[example_id]
+        expected = override["expected_solution"]
+        if " ".join(str(original["solution"]).split()) != " ".join(expected.split()):
+            raise ValueError(f"answer override source mismatch: {example_id}")
+        if gold not in (None, ""):
+            raise ValueError(f"answer override would replace a nonempty annotation: {example_id}")
+        gold = override["ground_truth"]
+        if not isinstance(gold, str) or not gold.strip() or not override["reason"].strip():
+            raise ValueError(f"invalid answer override: {example_id}")
+        print(f"[Annotation correction] {example_id}: empty -> {gold!r}; {override['reason']}", flush=True)
+        return gold, "explicit_yaml_override"
+    if gold in (None, ""):
+        raise ValueError(f"empty extracted answer: {example_id}; inspect the source and add a verified data.answer_overrides entry")
+    return gold, "existing_extractor"
+
+
 def load_hendrycks_math_train(config: dict) -> tuple[list[dict], list[dict]]:
     import pyarrow.parquet as pq
     from data.prepare_math import extract_ground_truth
@@ -59,6 +83,8 @@ def load_hendrycks_math_train(config: dict) -> tuple[list[dict], list[dict]]:
         raise ValueError(f"unexpected train categories: {categories}")
     suffix = prompt_suffix(config)
     rows, sources = [], []
+    overrides = cfg.get("answer_overrides", {})
+    applied_overrides = set()
     for path in files:
         schema = pq.read_schema(path)
         print(f"Train parquet: {path}\nSchema:\n{schema}", flush=True)
@@ -70,13 +96,14 @@ def load_hendrycks_math_train(config: dict) -> tuple[list[dict], list[dict]]:
             level = str(original.get("level") or "unknown")
             # File name disambiguates rows when a category has multiple shards.
             example_id = f"{category}/{path.name}:{index}"
-            gold = extract_ground_truth(original)
-            if gold in (None, ""):
-                raise ValueError(f"empty extracted answer: {example_id}")
+            gold, answer_source = extract_diagnosis_ground_truth(original, example_id, overrides, extract_ground_truth)
+            if answer_source == "explicit_yaml_override":
+                applied_overrides.add(example_id)
             rows.append({
                 "example_id": example_id, "category": category, "level": level,
                 "problem": problem, "solution": str(original["solution"]),
                 "gold_answer": gold, "ground_truth": gold,
+                "gold_answer_source": answer_source,
                 "prompt": [{"role": "user", "content": f"{problem} {suffix}".strip()}],
                 "data_source": "hendrycks_math", "ability": "math",
                 "reward_model": {"style": "rule", "ground_truth": gold},
@@ -85,6 +112,8 @@ def load_hendrycks_math_train(config: dict) -> tuple[list[dict], list[dict]]:
             })
         sources.append({"path": str(path), "schema": str(schema),
                         "sha256": hashlib.sha256(path.read_bytes()).hexdigest()})
+    if applied_overrides != set(overrides):
+        raise ValueError(f"unused answer overrides: {sorted(set(overrides) - applied_overrides)}")
     if len(rows) != cfg["expected_train_size"]:
         raise ValueError(f"expected {cfg['expected_train_size']} train rows, found {len(rows)}")
     print(f"Train files: {len(files)}; examples: {len(rows)}; categories: {categories}")
@@ -113,6 +142,7 @@ def prepare_diagnosis_split(config: dict) -> dict:
     manifest = {
         "seed": config["seed"], "data_root": str(project_path(cfg["root"])),
         "sources": sources, "prompt_suffix": prompt_suffix(config),
+        "answer_overrides_applied": cfg.get("answer_overrides", {}),
         "files": {key: cfg[key] for key in ("future_train_file", "diagnostic_file", "pilot_file")},
         "allocation": "category+level proportional largest remainder; sorted strata + seeded shuffle",
         "counts": {"original_train": len(rows), "future_train": len(future),

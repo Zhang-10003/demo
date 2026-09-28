@@ -280,3 +280,15 @@ success probability or zero learnability. No automatic GO/KILL threshold is set.
 The diagnosis tests cover scientific bookkeeping and mocked generation/resume.
 They do not establish real-model recovery. A real Debug must be executed on the
 server with the local dataset and model before the formal pilot.
+
+### Source annotation correction
+
+The local train row `number_theory/train-00000-of-00001.parquet:661` ends with
+an empty `\\boxed{}`. The supplied solution establishes that all integers
+strictly between n!+1 and n!+n are composite, so the correct numerical answer
+is zero. Both diagnosis YAMLs explicitly set this row's ground truth to `0`
+under `data.answer_overrides`, with its expected solution and justification.
+Preparation checks the source text, logs the correction, retains the row,
+records `gold_answer_source` in parquet and saves the correction in the split
+manifest. Original source files, prompts and the verifier are unchanged.
+Other empty annotations still fail for inspection; they are never assumed zero.

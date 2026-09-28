@@ -10,6 +10,26 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import diagnose as d
 from data.prepare_diagnosis import stratified_take
+from data.prepare_diagnosis import extract_diagnosis_ground_truth
+
+
+def test_explicit_empty_box_correction():
+    config = d.load_config("configs/debug_diagnosis.yaml")
+    formal = d.load_config("configs/diagnosis_qwen3_1.7b_math.yaml")
+    overrides = config["data"]["answer_overrides"]
+    assert overrides == formal["data"]["answer_overrides"]
+    example_id = "number_theory/train-00000-of-00001.parquet:661"
+    original = {"solution": overrides[example_id]["expected_solution"]}
+    gold, source = extract_diagnosis_ground_truth(original, example_id, overrides, lambda row: "")
+    assert gold == "0"
+    assert source == "explicit_yaml_override"
+    with pytest.raises(ValueError, match="source mismatch"):
+        extract_diagnosis_ground_truth({"solution": "Different problem \\boxed{}"}, example_id, overrides, lambda row: "")
+    with pytest.raises(ValueError, match="nonempty"):
+        extract_diagnosis_ground_truth(original, example_id, overrides, lambda row: "1")
+    with pytest.raises(ValueError, match="empty extracted"):
+        extract_diagnosis_ground_truth(original, "unlisted_id", overrides, lambda row: "")
+    assert extract_diagnosis_ground_truth(original, "unlisted_id", overrides, lambda row: "7") == ("7", "existing_extractor")
 
 
 @pytest.mark.parametrize("values, expected", [
