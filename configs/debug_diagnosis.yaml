@@ -23,6 +23,12 @@ data:
       ground_truth: '0'
       expected_solution: 'Observe that for all $k \in 1< k< n$, since $k$ divides $n!$, $k$ also divides $n!+k$. Therefore, all numbers $a$ in the range $n!+1<a<n!+n$ are composite. Therefore there are $\boxed{}$ primes in that range.'
       reason: 'Empty boxed annotation; every intermediate integer is composite, so the number of primes is zero.'
+    'number_theory/train-00000-of-00001.parquet:663':
+      ground_truth: '0'
+      expected_solution: >-
+        First, note that $n$ does not have a prime number larger than $61$ as one of its factors. Also, note that $n$ does not equal $1$.
+        Therefore, since the prime factorization of $n$ only has primes from $2$ to $59$, $n$ and $P$ share at least one common factor other than $1$. Therefore $P+n$ is not prime for any $n$, so the answer is $\boxed{}$.
+      reason: 'Empty boxed annotation; each n shares a prime factor with P, so all 58 terms P+n are composite and N=0.'
 rollout:
   initial_group_size: 2
   recovery_num_samples: 4

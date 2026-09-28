@@ -13,13 +13,17 @@ from data.prepare_diagnosis import stratified_take
 from data.prepare_diagnosis import extract_diagnosis_ground_truth
 
 
-def test_explicit_empty_box_correction():
+@pytest.mark.parametrize("row_index", [661, 663])
+def test_explicit_empty_box_correction(row_index):
     config = d.load_config("configs/debug_diagnosis.yaml")
     formal = d.load_config("configs/diagnosis_qwen3_1.7b_math.yaml")
     overrides = config["data"]["answer_overrides"]
     assert overrides == formal["data"]["answer_overrides"]
-    example_id = "number_theory/train-00000-of-00001.parquet:661"
+    example_id = f"number_theory/train-00000-of-00001.parquet:{row_index}"
     original = {"solution": overrides[example_id]["expected_solution"]}
+    if row_index == 663:
+        # Source parquet has a newline; YAML folds it to a space.
+        original["solution"] = original["solution"].replace("Therefore, since", "\nTherefore, since", 1)
     gold, source = extract_diagnosis_ground_truth(original, example_id, overrides, lambda row: "")
     assert gold == "0"
     assert source == "explicit_yaml_override"

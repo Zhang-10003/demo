@@ -283,10 +283,13 @@ server with the local dataset and model before the formal pilot.
 
 ### Source annotation correction
 
-The local train row `number_theory/train-00000-of-00001.parquet:661` ends with
-an empty `\\boxed{}`. The supplied solution establishes that all integers
-strictly between n!+1 and n!+n are composite, so the correct numerical answer
-is zero. Both diagnosis YAMLs explicitly set this row's ground truth to `0`
+The local train rows `number_theory/train-00000-of-00001.parquet:661` and
+`number_theory/train-00000-of-00001.parquet:663` end with an empty `\boxed{}`.
+The first solution establishes that all integers strictly between n!+1 and
+n!+n are composite. For the second, every n from 2 to 59 shares a prime factor
+with P, making every P+n composite. Both correct numerical answers are zero.
+The server's full train scan found exactly these two extraction issues.
+Both diagnosis YAMLs explicitly set these rows' ground truth to `0`
 under `data.answer_overrides`, with its expected solution and justification.
 Preparation checks the source text, logs the correction, retains the row,
 records `gold_answer_source` in parquet and saves the correction in the split
